@@ -1,0 +1,18 @@
+{
+    "name": "ite-18-final-project",
+    "version": "1.0.0",
+    "description": "A-Frame 3D game project",
+    "scripts": {
+        "dev": "http-server -p 8080 -o"
+    },
+    "keywords": [
+        "aframe",
+        "game",
+        "3d"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "http-server": "^14.1.1"
+    }
+}

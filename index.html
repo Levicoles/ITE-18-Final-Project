@@ -1,0 +1,277 @@
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- Load modules in order -->
+    <script src="modules/game-state.js"></script>
+    <script src="modules/light-flicker.js"></script>
+    <script src="modules/health-system.js"></script>
+    <script src="modules/billboard.js"></script>
+    <script src="modules/wall-collision.js"></script>
+    <script src="modules/jump-controls.js"></script>
+    <script src="modules/enemy-ai.js"></script>
+    <script src="modules/gun-shoot.js"></script>
+    <script src="script.js"></script>
+
+    <style>
+      .crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+        z-index: 9999;
+      }
+      .crosshair::before,
+      .crosshair::after {
+        content: '';
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+      .crosshair::before {
+        width: 2px;
+        height: 20px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .crosshair::after {
+        width: 20px;
+        height: 2px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .level-complete {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #00ff00;
+        font-family: Arial, sans-serif;
+        font-size: 48px;
+        font-weight: bold;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 255, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 30px 50px;
+        border-radius: 10px;
+        border: 3px solid #00ff00;
+        z-index: 10001;
+        pointer-events: none;
+        display: none;
+      }
+      .game-over {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ff0000;
+        font-family: Arial, sans-serif;
+        font-size: 64px;
+        font-weight: bold;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.9);
+        padding: 40px 60px;
+        border-radius: 10px;
+        border: 4px solid #ff0000;
+        z-index: 10002;
+        pointer-events: none;
+        display: none;
+      }
+    </style>
+
+    <!-- Free creepy tile texture -->
+    <a-assets>
+      <img id="tileTex" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
+      <img id="wallTex" src="assets/Walls.png">
+      <img id="gunTex" src="assets/Gun.png">
+      <img id="ghostTex" src="assets/Ghost.png">
+      <audio id="gunSound" src="assets/Gun_sound.mp3" preload="auto"></audio>
+      <audio id="backgroundMusic" src="assets/Backgroud_music.mp3" preload="auto" loop></audio>
+    </a-assets>
+  </head>
+
+  <body>
+    <div class="crosshair"></div>
+    <div class="level-complete" id="levelComplete">Level 1 Done!</div>
+    <div class="game-over" id="gameOver">Game Over</div>
+    <a-scene fog="type: linear; color: #222; near: 2; far: 50">
+
+      <!-- FLOOR -->
+      <a-plane 
+        rotation="-90 0 0" 
+        width="30" 
+        height="30" 
+        material="src: #wallTex; repeat: 15 15; roughness: 1; metalness: 0">
+      </a-plane>
+
+      <!-- TILE WALLS -->
+      <!-- Back -->
+      <a-plane 
+        position="0 3 -15"
+        rotation="0 0 0"
+        width="30"
+        height="6"
+        material="src: #wallTex; repeat: 15 4; roughness: 1;">
+      </a-plane>
+
+      <!-- Front -->
+      <a-plane 
+        position="0 3 15"
+        rotation="0 180 0"
+        width="30"
+        height="6"
+        material="src: #wallTex; repeat: 15 4; roughness: 1;">
+      </a-plane>
+
+      <!-- Left -->
+      <a-plane 
+        position="-15 3 0"
+        rotation="0 90 0"
+        width="30"
+        height="6"
+        material="src: #wallTex; repeat: 15 4;">
+      </a-plane>
+
+      <!-- Right -->
+      <a-plane 
+        position="15 3 0"
+        rotation="0 -90 0"
+        width="30"
+        height="6"
+        material="src: #wallTex; repeat: 15 4;">
+      </a-plane>
+
+      <!-- CEILING -->
+      <a-plane 
+        position="0 6 0"
+        rotation="90 0 0" 
+        width="30" 
+        height="30" 
+        material="src: #wallTex; repeat: 15 15; roughness: 1;">
+      </a-plane>
+
+      <!-- BOX WALLS ON FLOOR -->
+      <a-box 
+        id="boxWall1"
+        position="5 1.5 5"
+        width="2"
+        height="3"
+        depth="2"
+        material="src: #wallTex; repeat: 1 2; roughness: 1; metalness: 0">
+      </a-box>
+      <a-box 
+        id="boxWall2"
+        position="-5 1.5 -5"
+        width="2"
+        height="3"
+        depth="2"
+        material="src: #wallTex; repeat: 1 2; roughness: 1; metalness: 0">
+      </a-box>
+      <a-box 
+        id="boxWall3"
+        position="-8 1.5 8"
+        width="2"
+        height="3"
+        depth="2"
+        material="src: #wallTex; repeat: 1 2; roughness: 1; metalness: 0">
+      </a-box>
+      <a-box 
+        id="boxWall4"
+        position="8 1.5 -8"
+        width="2"
+        height="3"
+        depth="2"
+        material="src: #wallTex; repeat: 1 2; roughness: 1; metalness: 0">
+      </a-box>
+
+      <!-- MAIN FLICKERING LIGHT -->
+      <a-light id="flickerLight" 
+               type="point" 
+               intensity="0.5" 
+               distance="40" 
+               color="#fff" 
+               position="0 5 0">
+      </a-light>
+
+      <!-- CORNER LIGHTS for creepy ambience -->
+      <a-light type="spot" color="#bbbbbb" intensity="0.2" position="-12 5 -12" angle="45"></a-light>
+      <a-light type="spot" color="#bbbbbb" intensity="0.2" position="12 5 -12" angle="45"></a-light>
+      <a-light type="spot" color="#bbbbbb" intensity="0.2" position="-12 5 12" angle="45"></a-light>
+      <a-light type="spot" color="#bbbbbb" intensity="0.2" position="12 5 12" angle="45"></a-light>
+
+      <!-- DIM OVERHEAD LAMPS -->
+      <a-light type="point" intensity="0.1" color="#aaa" position="0 5 10"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="0 5 -10"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="10 5 0"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="-10 5 0"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="7 5 7"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="-7 5 7"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="7 5 -7"></a-light>
+      <a-light type="point" intensity="0.1" color="#aaa" position="-7 5 -7"></a-light>
+
+      <!-- GHOST ENEMIES CONTAINER -->
+      <a-entity id="ghostsContainer"></a-entity>
+
+      <!-- BACKGROUND MUSIC -->
+      <a-sound src="#backgroundMusic" autoplay="true" loop="true" volume="4.5"></a-sound>
+
+      <!-- PLAYER -->
+      <a-entity 
+        id="player"
+        camera 
+        wasd-controls="acceleration: 15"
+        look-controls="pointerLockEnabled: true; touchEnabled: false"
+        wall-collision
+        jump-controls
+        position="0 1.6 0">
+        
+        <!-- PLAYER WEAPON -->
+        <a-plane 
+          id="weapon"
+          position="0.4 -0.3 -0.5"
+          rotation="0 0 0"
+          width="0.6"
+          height="0.6"
+          material="src: #gunTex; transparent: true; side: double"
+          gun-shoot>
+        </a-plane>
+        
+        <!-- PLAYER HEALTH INDICATOR -->
+        <a-entity position="-0.85 -0.6 -0.8" id="healthContainer">
+          <a-text
+            id="healthText"
+            value="Health: 100%"
+            position="0 0 0"
+            rotation="0 0 0"
+            align="left"
+            color="#ffffff"
+            font="roboto"
+            width="1.5"
+            side="double"
+            anchor="left">
+          </a-text>
+        </a-entity>
+        
+        <!-- GHOST HEALTH INDICATOR -->
+        <a-entity position="0.85 -0.6 -0.8" id="ghostHealthContainer">
+          <a-text
+            id="ghostHealthText"
+            value="Ghost: 100%"
+            position="0 0 0"
+            rotation="0 0 0"
+            align="right"
+            color="#ff0000"
+            font="roboto"
+            width="1.5"
+            side="double"
+            anchor="right">
+          </a-text>
+        </a-entity>
+      </a-entity>
+
+
+    </a-scene>
+  </body>
+</html>
